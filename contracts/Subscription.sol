@@ -8,20 +8,21 @@ contract Subscription is IERC721, Ownable {
 
     address creator;
 
-    string private _name;
+    string private _symbol;
     mapping(uint256 => address) private _owners;
-    mapping(address => uint256) private _balances;
+    mapping(address => bool) private _balances;
     mapping(uint256 => address) private _tokenApprovals;
     mapping(address => mapping(address => bool)) private _operatorApprovals;
 
     constructor(address creator, uint256 _id) {
-        _name = abiencode.packed("id ", string(_id));
+        _symbol = abiencode.packed("id ", string(_id));
 
     }
 
     function balanceOf(address owner) public view virtual override returns (uint256) {
         require(owner != address(0), "ERC721: balance query for the zero address");
-        return _balances[owner];
+        if(_balances[owner]) return 1;
+        return 0;
     }
 
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
@@ -31,23 +32,17 @@ contract Subscription is IERC721, Ownable {
     }
 
     function name() public view virtual override returns (string memory) {
-        return _name;
+        return "VOYRME SUB";
     }
 
     function symbol() public view virtual override returns (string memory) {
         return _symbol;
     }
 
+
+/// @dev no use case
+/*
     function approve(address to, uint256 tokenId) public virtual override {
-        address owner = ERC721.ownerOf(tokenId);
-        require(to != owner, "ERC721: approval to current owner");
-
-        require(
-            _msgSender() == owner || isApprovedForAll(owner, _msgSender()),
-            "ERC721: approve caller is not owner nor approved for all"
-        );
-
-        _approve(to, tokenId);
     }
 
     function getApproved(uint256 tokenId) public view virtual override returns (address) {
@@ -94,7 +89,7 @@ contract Subscription is IERC721, Ownable {
     ) public virtual override {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
         _safeTransfer(from, to, tokenId, _data);
-    }
+    } */
 
     function _mint(address to, uint256 tokenId) internal virtual {
         require(to != address(0), "ERC721: mint to the zero address");
