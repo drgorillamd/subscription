@@ -1,6 +1,6 @@
-pragma solidity 0.8.0;
+pragma solidity ^0.8.6;
 
-import "@openzeppelin/contract/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Subscription.sol";
 
 interface ISub {
@@ -14,25 +14,48 @@ contract Factory is Ownable {
 
     mapping(address => bool) isCreator;
 
-    address[] child_contracts;
+    Subscription[] child_contracts;
 
     constructor () {}
 
-    function newCreator(address _creator) external {
-        require(!isCreator, "already creator");
-        address _adr = new Subscription(_creator, current_id);
-        child_contracts.push(adr);
-        isCreator(_creator) = true;
+    function newCreator(address _creator, address token_adr) external {
+        require(!isCreator[_creator], "already creator");
+        string memory current_id_str = string(abi.encodePacked("id ", uint2str(current_id)));
+        Subscription _adr = new Subscription(_creator, current_id_str, token_adr);
+        child_contracts.push(_adr);
+        isCreator[_creator] = true;
         current_id++;
     }
 
-    function payAll()
+    function payAll() external {}
 
-    function payOne(id)
+    function payOne(uint256 id) external {}
 
-    function suspendCreator(id) onlyOwner
+    function suspendCreator(uint256 id) external onlyOwner {}
 
-    function resumeCreator(id) onlyOwner
+    function resumeCreator(uint256 id) external onlyOwner {}
+
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint j = _i;
+        uint len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint k = len;
+        while (_i != 0) {
+            k = k-1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
+    }
 
 
 }

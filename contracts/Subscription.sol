@@ -1,139 +1,116 @@
-pragma solidity 0.8.0;
+pragma solidity ^0.8.6;
 
 // SPDX-License-Identifier: MIT
 
-import "@openzeppelin/contract/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+/// @author DrGorilla.eth / Voyager Media Group
+/// @title Memories Subscription: individual creators
+/// @notice this is the generic NFT compatible subscription token.
+/// @dev accepted token is set by factory. totalySupply is, de facto, tthe current id minted,
+/// Sub prices are individual to allow special offer for limited timeframe
+
+// TODO : manage limited time offer reversibillity
+
 
 contract Subscription is IERC721, Ownable {
+
+    uint256 totalSupply;
+    uint256 current_price; //in wei
 
     address creator;
 
     string private _symbol;
+
+    IERC20 payment_token;
+
     mapping(uint256 => address) private _owners;
-    mapping(address => bool) private _balances;
-    mapping(uint256 => address) private _tokenApprovals;
-    mapping(address => mapping(address => bool)) private _operatorApprovals;
+    mapping(address => uint256) private _owned;
+    mapping(uint256 => uint256) public expirations; //id->timestamp
+    mapping(address => uint256) public subscription_price;
 
-    constructor(address creator, uint256 _id) {
-        _symbol = abiencode.packed("id ", string(_id));
-
+    modifier onlyAdmin {
+        require(msg.sender == creator || msg.sender == owner(), "Sub: unauthorized");
+        _;
     }
 
-    function balanceOf(address owner) public view virtual override returns (uint256) {
-        require(owner != address(0), "ERC721: balance query for the zero address");
-        if(_balances[owner]) return 1;
+    constructor(address _creator, string memory _id, address token_adr) {
+        _symbol = _id;
+        creator = _creator;
+        payment_token = IERC20(token_adr);
+    }
+
+    function balanceOf(address _owner) public view virtual override returns (uint256) {
+        require(_owner != address(0), "ERC721: balance query for the zero address");
+        if(_owned[_owner] != 0) return 1;
         return 0;
     }
 
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
-        address owner = _owners[tokenId];
-        require(owner != address(0), "ERC721: owner query for nonexistent token");
-        return owner;
+        address _owner = _owners[tokenId];
+        require(_owner != address(0), "ERC721: owner query for nonexistent token");
+        return _owner;
     }
 
-    function name() public view virtual override returns (string memory) {
+    function name() public view virtual returns (string memory) {
         return "VOYRME SUB";
     }
 
-    function symbol() public view virtual override returns (string memory) {
+    function symbol() public view virtual returns (string memory) {
         return _symbol;
     }
 
-
-/// @dev no use case
-/*
-    function approve(address to, uint256 tokenId) public virtual override {
+/// @param length duration of subscription, in seconds
+    function newSub(uint256 length) external {
+        require(length != 0, "Invalid sub duration");
+        if(_owned[msg.sender] != 0) renewSub(_owned[msg.sender]);
+        else {
+            subscription_price[msg.sender] = current_price;
+            _owned[msg.sender] = totalSupply;
+            _owners[totalSupply] = msg.sender;
+            totalSupply++;
+            Transfer(address(this), msg.sender, totalSupply);
+            _processPayment();
+        }
     }
 
-    function getApproved(uint256 tokenId) public view virtual override returns (address) {
-        require(_exists(tokenId), "ERC721: approved query for nonexistent token");
-
-        return _tokenApprovals[tokenId];
+    function renewSub(uint256 length) public {
+        require(length != 0, "Invalid sub duration");
+        require(_owned[msg.sender] != 0, "No sub owned");
+        if()
+        _processPayment(length);
     }
 
-    function setApprovalForAll(address operator, bool approved) public virtual override {
-        require(operator != _msgSender(), "ERC721: approve to caller");
-
-        _operatorApprovals[_msgSender()][operator] = approved;
-        emit ApprovalForAll(_msgSender(), operator, approved);
+    function _processPayment(length) internal {
+        uint256 to_pay = subscription_price[msg.sender]  * length;
+        require(payment_token.allowance(msg.sender, address(this)) >= to_pay, "IERC20: insuf approval");
+        expirations[msg.sender] += length;
+        payment_token.transferFrom(msg.sender, address(this), to_pay);
     }
 
-    function isApprovedForAll(address owner, address operator) public view virtual override returns (bool) {
-        return _operatorApprovals[owner][operator];
+    function setCurrentPrice(uint256 _price) external onlyAdmin {
+        current_price = _price;
     }
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public virtual override {
-        //solhint-disable-next-line max-line-length
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
 
-        _transfer(from, to, tokenId);
-    }
+/// @dev no use case:
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public virtual override {
-        safeTransferFrom(from, to, tokenId, "");
-    }
+    function approve(address to, uint256 tokenId) public virtual override {}
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes memory _data
-    ) public virtual override {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
-        _safeTransfer(from, to, tokenId, _data);
-    } */
+    function getApproved(uint256 tokenId) public view virtual override returns (address) {return address(0);}
 
-    function _mint(address to, uint256 tokenId) internal virtual {
-        require(to != address(0), "ERC721: mint to the zero address");
-        require(!_exists(tokenId), "ERC721: token already minted");
+    function setApprovalForAll(address operator, bool approved) public virtual override {}
 
-        _beforeTokenTransfer(address(0), to, tokenId);
+    function isApprovedForAll(address owner, address operator) public view virtual override returns (bool) {return false;}
 
-        _balances[to] += 1;
-        _owners[tokenId] = to;
+    function transferFrom(address from,address to,uint256 tokenId) public virtual override {}
 
-        emit Transfer(address(0), to, tokenId);
-    }
+    function safeTransferFrom(address from,address to,uint256 tokenId) public virtual override {}
 
-    function _burn(uint256 tokenId) internal virtual {
-        address owner = ERC721.ownerOf(tokenId);
+    function safeTransferFrom(address from,address to,uint256 tokenId,bytes memory _data) public virtual override {}
 
-        _beforeTokenTransfer(owner, address(0), tokenId);
+    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {return false;}
 
-        // Clear approvals
-        _approve(address(0), tokenId);
-
-        _balances[owner] -= 1;
-        delete _owners[tokenId];
-
-        emit Transfer(owner, address(0), tokenId);
-    }
-
-    function _transfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual {
-        require(ERC721.ownerOf(tokenId) == from, "ERC721: transfer of token that is not own");
-        require(to != address(0), "ERC721: transfer to the zero address");
-
-        _beforeTokenTransfer(from, to, tokenId);
-
-        // Clear approvals from the previous owner
-        _approve(address(0), tokenId);
-
-        _balances[from] -= 1;
-        _balances[to] += 1;
-        _owners[tokenId] = to;
-
-        emit Transfer(from, to, tokenId);
-    }
 }
