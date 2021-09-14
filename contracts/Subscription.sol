@@ -79,7 +79,6 @@ contract Subscription is IERC721, Ownable {
     function renewSub(uint256 length) public {
         require(length != 0, "Invalid sub duration");
         require(_owned[msg.sender] != 0, "No sub owned");
-        if()
         _processPayment(length);
     }
 
