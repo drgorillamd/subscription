@@ -28,7 +28,7 @@ contract Subscription is IERC721, Ownable {
 
     mapping(uint256 => address) private _owners;
     mapping(address => uint256) private _owned;
-    mapping(uint256 => uint256) public expirations; //id->timestamp
+    mapping(address => uint256) public expirations; //id->timestamp
     mapping(address => uint256) public subscription_price;
 
     modifier onlyAdmin {
@@ -71,8 +71,8 @@ contract Subscription is IERC721, Ownable {
             _owned[msg.sender] = totalSupply;
             _owners[totalSupply] = msg.sender;
             totalSupply++;
-            Transfer(address(this), msg.sender, totalSupply);
-            _processPayment();
+            emit Transfer(address(this), msg.sender, totalSupply);
+            _processPayment(length);
         }
     }
 
@@ -82,7 +82,7 @@ contract Subscription is IERC721, Ownable {
         _processPayment(length);
     }
 
-    function _processPayment(length) internal {
+    function _processPayment(uint256 length) internal {
         uint256 to_pay = subscription_price[msg.sender]  * length;
         require(payment_token.allowance(msg.sender, address(this)) >= to_pay, "IERC20: insuf approval");
         expirations[msg.sender] += length;
