@@ -13,20 +13,19 @@ import "./VoyrMemoriesSubscriptions.sol";
 
 contract VoyrMemoriesFactory is Ownable {
 
-    uint256 current_id;
+    uint256 current_id = 1;
 
-    mapping(address => bool) isCreator;
-
-    VoyrMemoriesSubscriptions[] child_contracts;
+    mapping(address => uint256) public creatorIds; //when called, will return 0 if not a creator
+    mapping(uint256 => VoyrMemoriesSubscriptions) public child_contracts; //id -> sub contract
 
     constructor () {}
 
     function newCreator(address _creator, address token_adr) external {
-        require(!isCreator[_creator], "already creator");
+        require(creatorIds[_creator] == 0, "already creator");
         string memory current_id_str = string(abi.encodePacked("id ", uint2str(current_id)));
         VoyrMemoriesSubscriptions _adr = new VoyrMemoriesSubscriptions(_creator, current_id_str, token_adr);
-        child_contracts.push(_adr);
-        isCreator[_creator] = true;
+        child_contracts[current_id] = _adr;
+        creatorIds[_creator] = current_id;
         current_id++;
     }
 
@@ -50,6 +49,13 @@ contract VoyrMemoriesFactory is Ownable {
 
     function resumeCreator(uint256 creator_id) external onlyOwner {
         child_contracts[creator_id].resume();
+    }
+
+    function deleteCreator(uint256 creator_id) external onlyOwner {
+        child_contracts[creator_id].pause();
+        address _creator = child_contracts[creator_id].getCreator();
+        delete child_contracts[creator_id];
+        delete creatorIds[_creator];
     }
 
     function uint2str(uint _i) internal pure returns (string memory _uintAsString) {

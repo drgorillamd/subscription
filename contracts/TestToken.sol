@@ -19,15 +19,15 @@ contract TestToken is IERC20 {
         _balances[msg.sender] = _totalSupply;
         emit Transfer(address(0), msg.sender, _totalSupply);
     }
-    function name() public view virtual override returns (string memory) {
+    function name() public view virtual returns (string memory) {
         return _name;
     }
 
-    function symbol() public view virtual override returns (string memory) {
+    function symbol() public view virtual returns (string memory) {
         return _symbol;
     }
 
-    function decimals() public view virtual override returns (uint8) {
+    function decimals() public view virtual returns (uint8) {
         return 2;
     }
 
@@ -40,7 +40,7 @@ contract TestToken is IERC20 {
     }
 
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
+        _transfer(msg.sender, recipient, amount);
         return true;
     }
 
@@ -49,7 +49,7 @@ contract TestToken is IERC20 {
     }
 
     function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
+        _approve(msg.sender, spender, amount);
         return true;
     }
 
@@ -60,24 +60,24 @@ contract TestToken is IERC20 {
     ) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
 
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
+        uint256 currentAllowance = _allowances[sender][msg.sender];
         require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
         unchecked {
-            _approve(sender, _msgSender(), currentAllowance - amount);
+            _approve(sender, msg.sender, currentAllowance - amount);
         }
         return true;
     }
 
     function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
+        _approve(msg.sender, spender, _allowances[msg.sender][spender] + addedValue);
         return true;
     }
 
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
+        uint256 currentAllowance = _allowances[msg.sender][spender];
         require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
         unchecked {
-            _approve(_msgSender(), spender, currentAllowance - subtractedValue);
+            _approve(msg.sender, spender, currentAllowance - subtractedValue);
         }
 
         return true;

@@ -12,13 +12,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @title Memories Subscription: individual creators
 /// @notice this is the generic NFT compatible subscription token.
 /// @dev accepted token is set by factory. totalySupply is, de facto, tthe current id minted,
-/// Sub prices are individual to allow special offer for limited time
-
+/// prices are expressed in wei per seconds. 
 
 contract VoyrMemoriesSubscriptions is IERC721, Ownable {
 
     uint256 totalSupply;
-    uint256 current_price; //in wei
+    uint256 public current_price; //in wei per second
 
     bool paused;
 
@@ -45,14 +44,14 @@ contract VoyrMemoriesSubscriptions is IERC721, Ownable {
     }
 
     function balanceOf(address _owner) public view virtual override returns (uint256) {
-        require(_owner != address(0), "ERC721: balance query for the zero address");
+        require(_owner != address(0), "Sub: balance query for the zero address");
         if(_owned[_owner] != 0) return 1;
         return 0;
     }
 
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
         address _owner = _owners[tokenId];
-        require(_owner != address(0), "ERC721: owner query for nonexistent token");
+        require(_owner != address(0), "Sub: owner query for nonexistent token");
         return _owner;
     }
 
@@ -64,9 +63,9 @@ contract VoyrMemoriesSubscriptions is IERC721, Ownable {
         return _symbol;
     }
 
-/// @param length duration of subscription, in seconds
+    /// @param length duration of subscription, in seconds
     function newSub(uint256 length) external {
-        require(length != 0, "Invalid sub duration");
+        require(length != 0, "Sub: Invalid sub duration");
         if(_owned[msg.sender] != 0) renewSub(_owned[msg.sender]);
         else {
             uint256 current_id = totalSupply;
@@ -79,8 +78,8 @@ contract VoyrMemoriesSubscriptions is IERC721, Ownable {
     }
 
     function renewSub(uint256 length) public {
-        require(length != 0, "Invalid sub duration");
-        require(_owned[msg.sender] != 0, "No sub owned");
+        require(length != 0, "Sub: Invalid sub duration");
+        require(_owned[msg.sender] != 0, "Sub: No sub owned");
         _processPayment(length);
     }
 
@@ -107,7 +106,7 @@ contract VoyrMemoriesSubscriptions is IERC721, Ownable {
     }
 
     function burn(address _adr) external onlyOwner {
-        require(_owned[_adr] != 0, "no token owned");
+        require(_owned[_adr] != 0, "Sub burn: no token owned");
         uint256 id = _owned[_adr];
         delete _owned[_adr];
         _owners[id] = address(0);
@@ -128,7 +127,16 @@ contract VoyrMemoriesSubscriptions is IERC721, Ownable {
 
     function setPaymentToken(address _token) external onlyAdmin {
         payment_token = IERC20(_token);
-        require(payment_token.totalSupply() != 0, "Invalid ERC20");
+        require(payment_token.totalSupply() != 0, "Set payment: Invalid ERC20");
+    }
+
+    /// @dev frontend integration: prefer accessing the mapping itself to get date.now (instead of last block timestamp)
+    function subscriptionActive() external view returns (bool) {
+        return expirations[msg.sender] >= block.timestamp;
+    }
+
+    function getCreator() external view returns (address) {
+        return creator;
     }
 
 
