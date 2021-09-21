@@ -9,12 +9,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /// @author DrGorilla.eth / Voyager Media Group
-/// @title Memories Subscription: individual creators
+/// @title VOYR Subscription: individual creators
 /// @notice this is the generic NFT compatible subscription token.
 /// @dev accepted token is set by factory. totalySupply is, de facto, tthe current id minted,
 /// prices are expressed in wei per seconds. 
 
-contract VoyrMemoriesSubscriptions is IERC721, Ownable {
+contract VOYRSubscriptions is IERC721, Ownable {
 
     uint256 totalSupply;
     uint256 public current_price; //in wei per second
