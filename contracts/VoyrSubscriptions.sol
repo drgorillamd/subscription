@@ -5,18 +5,17 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-//import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
 
 /// @author DrGorilla.eth / Voyager Media Group
 /// @title Memories Subscription: individual creators
 /// @notice this is the generic NFT compatible subscription token.
-/// @dev accepted token is set by factory. totalySupply is, de facto, tthe current id minted,
-/// prices are expressed in wei per seconds. 
+/// @dev This contract is non-custodial. Accepted token is set by factory. totalySupply is, de facto, tthe current id minted,
+/// prices are expressed in wei per seconds.
 
-contract VoyrMemoriesSubscriptions is IERC721, Ownable {
+contract VoyrSubscriptions is IERC721, Ownable {
 
-    uint256 totalSupply;
+    uint256 public totalSupply;
     uint256 public current_price; //in wei per second
 
     bool paused;
@@ -28,7 +27,7 @@ contract VoyrMemoriesSubscriptions is IERC721, Ownable {
     IERC20 payment_token;
 
     mapping(uint256 => address) private _owners;
-    mapping(address => uint256) private _owned;
+    mapping(address => uint256) private _owned;  //
     mapping(address => uint256) public expirations; //adr->timestamp of the end of current subscription
 
     modifier onlyAdmin {
@@ -66,7 +65,7 @@ contract VoyrMemoriesSubscriptions is IERC721, Ownable {
     /// @param length duration of subscription, in seconds
     function newSub(uint256 length) external {
         require(length != 0, "Sub: Invalid sub duration");
-        if(_owned[msg.sender] != 0) renewSub(_owned[msg.sender]);
+        if(_owned[msg.sender] != 0) renewSub(length);
         else {
             uint256 current_id = totalSupply;
             _owned[msg.sender] = current_id;
@@ -86,7 +85,7 @@ contract VoyrMemoriesSubscriptions is IERC721, Ownable {
     function _processPayment(uint256 length) internal {
         require(!paused, "Creator paused");
         uint256 to_pay = current_price  * length;
-        require(payment_token.allowance(msg.sender, creator) >= to_pay, "IERC20: insuf approval");
+        require(payment_token.allowance(msg.sender, address(this)) >= to_pay, "IERC20: insuf approval");
         
         expirations[msg.sender] = expirations[msg.sender] >= block.timestamp ?  expirations[msg.sender] + length : block.timestamp + length;
         
@@ -116,10 +115,10 @@ contract VoyrMemoriesSubscriptions is IERC721, Ownable {
     }
     
     function sendSubscription(address _adr, uint256 length) external onlyOwner {
-        if(_owned[msg.sender] == 0) {
-            _owned[msg.sender] = totalSupply;
-            _owners[totalSupply] = msg.sender;
-            emit Transfer(address(this), msg.sender, totalSupply);
+        if(_owned[_adr] == 0) {
+            _owned[_adr] = totalSupply;
+            _owners[totalSupply] = _adr;
+            emit Transfer(address(this), _adr, totalSupply);
             totalSupply++;
         }
         expirations[_adr] = expirations[_adr] >= block.timestamp ?  expirations[_adr] + length : block.timestamp + length;
@@ -130,7 +129,7 @@ contract VoyrMemoriesSubscriptions is IERC721, Ownable {
         require(payment_token.totalSupply() != 0, "Set payment: Invalid ERC20");
     }
 
-    /// @dev frontend integration: prefer accessing the mapping itself to get date.now (instead of last block timestamp)
+    /// @dev frontend integration: prefer accessing the mapping itself to compare with Date.now() (instead of last block timestamp)
     function subscriptionActive() external view returns (bool) {
         return expirations[msg.sender] >= block.timestamp;
     }
@@ -141,21 +140,13 @@ contract VoyrMemoriesSubscriptions is IERC721, Ownable {
 
 
 /// @dev no use case:
-
     function approve(address to, uint256 tokenId) public virtual override {}
-
     function getApproved(uint256 tokenId) public view virtual override returns (address) {return address(0);}
-
     function setApprovalForAll(address operator, bool approved) public virtual override {}
-
     function isApprovedForAll(address owner, address operator) public view virtual override returns (bool) {return false;}
-
     function transferFrom(address from,address to,uint256 tokenId) public virtual override {}
-
     function safeTransferFrom(address from,address to,uint256 tokenId) public virtual override {}
-
     function safeTransferFrom(address from,address to,uint256 tokenId,bytes memory _data) public virtual override {}
-
-    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {return false;}
+    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {return false;} 
 
 }

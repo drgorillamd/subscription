@@ -1,5 +1,5 @@
-const VoyrMemoriesFactory = artifacts.require("VoyrMemoriesFactory");
+const VoyrSubFactory = artifacts.require("VoyrSubFactory");
 
 module.exports = function (deployer) {
-  deployer.deploy(VoyrMemoriesFactory);
+  deployer.deploy(VoyrSubFactory);
 };

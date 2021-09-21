@@ -1,10 +1,11 @@
-const AFactory = artifacts.require("VoyrMemoriesFactory");
-const ASub = artifacts.require("VoyrMemoriesSubscriptions");
+const AFactory = artifacts.require("VoyrSubFactory");
+const ASub = artifacts.require("VoyrSubscriptions");
 const erc20 = artifacts.require("TestToken");
 
 const truffleCost = require('truffle-cost');
 const truffleAssert = require('truffle-assertions');
 const BN = require('bn.js');
+const { advanceTimeAndBlock } = require('./helper/timeshift');
 require('chai').use(require('chai-bn')(BN)).should();
 
 let factory;
@@ -34,6 +35,7 @@ contract("Subscriptions manager", accounts => {
     it("Child contract deployed", async () => {
       const child = await factory.child_contracts.call(1);
       subscription = await ASub.at(child);
+      console.log("child: "+subscription.address);
       assert.notEqual(child, "0x0000000000000000000000000000000000000000");
     });
 
@@ -43,21 +45,48 @@ contract("Subscriptions manager", accounts => {
     });
   });
 
-  describe.skip("New subscription", () => {
+  describe("New subscription", () => {
     it("Subscription given", async () => {
-      const obs_name = await x.name();
-      assert.equal(obs_name, "Rewardeum", "incorrect name returned")
+      await truffleCost.log(factory.give(1, receiver, 60));
+      const theo = new BN( (Date.now()/1000) + 60);
+      const observed = await subscription.expirations.call(receiver);
+      observed.should.be.a.bignumber.equals(theo);
+    });
+
+    it("NFT Balance", async () => {
+      const observed = await subscription.balanceOf(receiver);
+      observed.should.be.a.bignumber.equals(new BN('1'));
     });
 
     it("Subscription bought", async () => {
-      const owned_by_0 = await x.isOwner.call(accounts[0]);
-      assert.isTrue(owned_by_0, "Owner is not account[0]");
+      await token.transfer(user, '10000', {from: owner});
+      await token.approve(subscription.address, '10000', {from: user});
+      await truffleCost.log(subscription.newSub(10, {from: user}));
+
+      const observed = await subscription.balanceOf(user);
+      observed.should.be.a.bignumber.equals(new BN('1'));
+
+      const ts_theo = new BN( (Date.now()/1000) + 10);
+      const ts_observed = await subscription.expirations.call(user);
+      ts_observed.should.be.a.bignumber.equals(ts_theo);
+    });
+
+    it("Renew", async () => {
+      await token.transfer(user, '10000', {from: owner});
+      await token.approve(subscription.address, '10000', {from: user});
+
+      const tmp = await subscription.expirations.call(user);
+      const ts_theo = tmp.add(new BN('10'));
+      await truffleCost.log(subscription.newSub(10, {from: user}));
+      const ts_after = await subscription.expirations.call(user);
+
+      ts_after.should.be.a.bignumber.equals(ts_theo);
     });
 
     it("Access control", async () => {
-      const bal = await x.balanceOf.call(accounts[0]);
-      const theo = await x.totalSupply.call();
-      bal.should.be.a.bignumber.that.equals(theo);
+      assert.isTrue(await subscription.subscriptionActive.call({from: user}));
+      await advanceTimeAndBlock(600);
+      assert.isFalse(await subscription.subscriptionActive.call({from: user}));
     });
   });
 
