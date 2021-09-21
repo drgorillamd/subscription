@@ -49,12 +49,12 @@ contract("Subscriptions manager", accounts => {
       assert.equal(obs_name, "Rewardeum", "incorrect name returned")
     });
 
-    it("Set", async () => {
+    it("Subscription bought", async () => {
       const owned_by_0 = await x.isOwner.call(accounts[0]);
       assert.isTrue(owned_by_0, "Owner is not account[0]");
     });
 
-    it("tot supply in owner", async () => {
+    it("Access control", async () => {
       const bal = await x.balanceOf.call(accounts[0]);
       const theo = await x.totalSupply.call();
       bal.should.be.a.bignumber.that.equals(theo);
