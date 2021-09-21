@@ -1,21 +1,41 @@
-const Token = artifacts.require("Rewardeum");
+const AFactory = artifacts.require("VoyrMemoriesFactory");
+const ASub = artifacts.require("VoyrMemoriesSubscriptions");
+const erc20 = artifacts.require("TestToken");
+
 const truffleCost = require('truffle-cost');
 const truffleAssert = require('truffle-assertions');
 const BN = require('bn.js');
 require('chai').use(require('chai-bn')(BN)).should();
 
-const routerAddress = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
+let factory;
+let subscription;
+let token;
 
-let x;
-
+const owner = accounts[0];
+const creator = accounts1];
+const user = accounts[2];
+const attacker = accounts[3];
+ 
 contract("Basic tests", accounts => {
 
   before(async function() {
-    await Token.new(routerAddress);
-    x = await Token.deployed();
+    token = await erc20.new();
+    factory = await AFactory.deployed();
   });
 
-  describe("Init state", () => {
+  describe("New creator", () => {
+    it("New creator", async () => {
+      await factory.newCreator(creator, token.address);
+      assert.isTrue(await factory.isCreator(creator));
+    });
+
+    it("Child contract deployed", async () => {
+      const owned_by_0 = await x.isOwner.call(accounts[0]);
+      assert.isTrue(owned_by_0, "Owner is not account[0]");
+    });
+  });
+/*
+  describe("New subscription", () => {
     it("Initialized - return proper name()", async () => {
       const obs_name = await x.name();
       assert.equal(obs_name, "Rewardeum", "incorrect name returned")
@@ -31,43 +51,6 @@ contract("Basic tests", accounts => {
       const theo = await x.totalSupply.call();
       bal.should.be.a.bignumber.that.equals(theo);
     });
-  });
+  });*/
 
-  describe("Circuit breaker test", () => {
-    it("Circuit Breaker: Enabled", async () => {
-      await truffleCost.log(x.setCircuitBreaker(true, {from: accounts[0]}));
-      const status_circ_break = await x.circuit_breaker.call();
-      assert.equal(true, status_circ_break, "Circuit breaker not set");
-    });
-
-    it("Circuit breaker: transfer from owner/exempted", async () => {
-      const to_send = 10**6;
-      const to_receive = 10**6;
-      const sender = accounts[0];
-      const receiver = accounts[1];
-      await truffleCost.log(x.transfer(receiver, to_send, { from: sender }));
-      const newBal = await x.balanceOf.call(receiver);
-      assert.equal(newBal.toNumber(), to_receive, "incorrect amount transfered");
-    });
-
-    it("Circuit breaker: transfer standard", async () => {
-      const to_send = 10**6;
-      const to_receive = 10**6;
-      const sender = accounts[1];
-      const receiver = accounts[2];
-      await truffleCost.log(x.transfer(receiver, to_send, { from: sender }));
-      const newBal = await x.balanceOf.call(receiver);
-      assert.equal(newBal.toNumber(), to_receive, "incorrect amount transfered");
-    });
-
-    it("Circuit Breaker: Disabled", async () => {
-      await x.setCircuitBreaker(false, {from: accounts[0]});
-      const status_circ_break = await x.circuit_breaker.call();
-      assert.equal(false, status_circ_break, "Circuit breaker not set");
-    });
-
-    it("Circuit Breaker: Unauthorized", async () => {
-      await truffleAssert.reverts(x.setCircuitBreaker(true, {from: accounts[1]}), "Ownable: caller is not an owner.");
-    });
-  });
 });
