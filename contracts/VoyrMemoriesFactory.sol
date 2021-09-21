@@ -3,27 +3,27 @@ pragma solidity ^0.8.6;
 
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./VoyrMemoriesSubscriptions.sol";
+import "./VOYRSubscriptions.sol";
 
 /// @author DrGorilla.eth / Voyager Media Group
-/// @title Memories Factory
+/// @title VOYR Subscriptions Factory
 /// @notice this is the factory and controller for subscription contracts.
 /// Each contract created by this factory is init with the name 'VOYR SUB' 
 /// and the symbol 'id XX' (where XX is the creator id)
 
-contract VoyrMemoriesFactory is Ownable {
+contract VOYRSubscriptionsFactory is Ownable {
 
     uint256 current_id = 1;
 
     mapping(address => uint256) public creatorIds; //when called, will return 0 if not a creator
-    mapping(uint256 => VoyrMemoriesSubscriptions) public child_contracts; //id -> sub contract
+    mapping(uint256 => VOYRSubscriptions) public child_contracts; //id -> sub contract
 
     constructor () {}
 
     function newCreator(address _creator, address token_adr) external {
         require(creatorIds[_creator] == 0, "already creator");
         string memory current_id_str = string(abi.encodePacked("id ", uint2str(current_id)));
-        VoyrMemoriesSubscriptions _adr = new VoyrMemoriesSubscriptions(_creator, current_id_str, token_adr);
+        VOYRSubscriptions _adr = new VOYRSubscriptions(_creator, current_id_str, token_adr);
         child_contracts[current_id] = _adr;
         creatorIds[_creator] = current_id;
         current_id++;
