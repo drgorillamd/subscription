@@ -16,7 +16,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract VoyrSubscriptions is IERC721, Ownable {
 
     uint256 public totalSupply;
-    uint256 public current_price; //in wei per second
+    uint256 public subscription_length = 30 days;
+    uint256 public price; //for one period (ie for 30 days by default)
 
     bool paused;
 
@@ -63,37 +64,42 @@ contract VoyrSubscriptions is IERC721, Ownable {
     }
 
     /// @param length duration of subscription, in seconds
-    function newSub(uint256 length) external {
-        require(length != 0, "Sub: Invalid sub duration");
-        if(_owned[msg.sender] != 0) renewSub(length);
+    function newSub(uint256 number_of_periods) external {
+        require(number_of_periods != 0, "Sub: Invalid sub duration");
+        if(_owned[msg.sender] != 0) renewSub(number_of_periods);
         else {
             uint256 current_id = totalSupply;
             _owned[msg.sender] = current_id;
             _owners[current_id] = msg.sender;
             emit Transfer(address(this), msg.sender, current_id);
             totalSupply++;
-            _processPayment(length);
+            _processPayment(number_of_periods);
         }
     }
 
-    function renewSub(uint256 length) public {
-        require(length != 0, "Sub: Invalid sub duration");
+    function renewSub(uint256 number_of_periods) public {
+        require(number_of_periods != 0, "Sub: Invalid sub duration");
         require(_owned[msg.sender] != 0, "Sub: No sub owned");
-        _processPayment(length);
+        _processPayment(number_of_periods);
     }
 
-    function _processPayment(uint256 length) internal {
+    function _processPayment(uint256 number_of_periods) internal {
         require(!paused, "Creator paused");
-        uint256 to_pay = current_price  * length;
+        uint256 to_pay = price  * number_of_periods;
+        uint256 total_duration = subscription_length * number_of_periods;
         require(payment_token.allowance(msg.sender, address(this)) >= to_pay, "IERC20: insuf approval");
         
-        expirations[msg.sender] = expirations[msg.sender] >= block.timestamp ?  expirations[msg.sender] + length : block.timestamp + length;
+        expirations[msg.sender] = expirations[msg.sender] >= block.timestamp ?  expirations[msg.sender] + total_duration : block.timestamp + total_duration;
         
         payment_token.transferFrom(msg.sender, creator, to_pay);
     }
 
     function setCurrentPrice(uint256 _price) external onlyAdmin {
-        current_price = _price;
+        price = _price;
+    }
+
+    function setSubscriptionLength(uint256 _length) external onlyAdmin {
+        subscription_length = _length;
     }
 
     function pause() external onlyOwner {
