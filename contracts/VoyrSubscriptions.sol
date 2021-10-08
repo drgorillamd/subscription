@@ -16,8 +16,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract VoyrSubscriptions is IERC721, Ownable {
 
     uint256 public totalSupply;
-    uint256 public subscription_length = 30 days;
-    uint256 public price; //for one period (ie for 30 days by default)
+    
+    struct Plan {
+        uint256 subscription_length;
+        uint256 price;
+    }
+
+    Plan[] public plans; //each elt is a plan as in "Pay PRICE token for SUBSCRIPTION_LENGTH seconds"
 
     bool paused;
 
@@ -28,7 +33,7 @@ contract VoyrSubscriptions is IERC721, Ownable {
     IERC20 payment_token;
 
     mapping(uint256 => address) private _owners;
-    mapping(address => uint256) private _owned;  //
+    mapping(address => uint256) private _owned; 
     mapping(address => uint256) public expirations; //adr->timestamp of the end of current subscription
 
     modifier onlyAdmin {
@@ -63,28 +68,29 @@ contract VoyrSubscriptions is IERC721, Ownable {
         return _symbol;
     }
 
-    /// @param length duration of subscription, in seconds
-    function newSub(uint256 number_of_periods) external {
+    function newSub(uint256 number_of_periods, uint256 plan) external {
         require(number_of_periods != 0, "Sub: Invalid sub duration");
-        if(_owned[msg.sender] != 0) renewSub(number_of_periods);
+        if(_owned[msg.sender] != 0) renewSub(number_of_periods, plan);
         else {
             uint256 current_id = totalSupply;
             _owned[msg.sender] = current_id;
             _owners[current_id] = msg.sender;
             emit Transfer(address(this), msg.sender, current_id);
             totalSupply++;
-            _processPayment(number_of_periods);
+            _processPayment(number_of_periods, plan);
         }
     }
 
-    function renewSub(uint256 number_of_periods) public {
+    function renewSub(uint256 number_of_periods, uint256 plan) public {
         require(number_of_periods != 0, "Sub: Invalid sub duration");
         require(_owned[msg.sender] != 0, "Sub: No sub owned");
-        _processPayment(number_of_periods);
+        _processPayment(number_of_periods, plan);
     }
 
-    function _processPayment(uint256 number_of_periods) internal {
+    function _processPayment(uint256 number_of_periods, uint256 plan) internal {
         require(!paused, "Creator paused");
+        uint256 price = plans[plan].price;
+        uint256 subscription_length = plans[plan].subscription_length;
         uint256 to_pay = price  * number_of_periods;
         uint256 total_duration = subscription_length * number_of_periods;
         require(payment_token.allowance(msg.sender, address(this)) >= to_pay, "IERC20: insuf approval");
@@ -94,14 +100,24 @@ contract VoyrSubscriptions is IERC721, Ownable {
         payment_token.transferFrom(msg.sender, creator, to_pay);
     }
 
-    function setCurrentPrice(uint256 _price) external onlyAdmin {
-        price = _price;
+    function addNewPlan(uint256 price, uint256 duration) external onlyAdmin {
+        Plan memory new_plan;
+        new_plan.subscription_length = duration;
+        new_plan.price = price;
+        plans.push(new_plan);
     }
 
-    function setSubscriptionLength(uint256 _length) external onlyAdmin {
-        subscription_length = _length;
+    function modifyPlan(uint256 price, uint256 duration, uint256 index) external onlyAdmin {
+        plans[index].price = price;
+        plans[index].subscription_length = duration;
     }
 
+    function deletePlan(uint256 index) external onlyAdmin {
+        require(index < plans.length, "Sub: invalid index");
+        plans[index] = plans[plans.length-1];
+        plans.pop();
+    }
+ 
     function pause() external onlyOwner {
         paused = true;
     }

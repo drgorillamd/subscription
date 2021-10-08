@@ -12,7 +12,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -25,7 +26,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -669,7 +671,7 @@
   "sourceMap": "66:352:5:-:0;;;90:33;;;-1:-1:-1;;;;;;90:33:5;113:10;90:33;;;66:352;;;;;;;;;;;;;;;;",
   "deployedSourceMap": "66:352:5:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;127:36;;;;;;;;;973:25:9;;;961:2;946:18;127:36:5;;;;;;;;90:33;;;;;-1:-1:-1;;;;;90:33:5;;;;;;-1:-1:-1;;;;;363:32:9;;;345:51;;333:2;318:18;90:33:5;300:102:9;313:103:5;;;;;;:::i;:::-;;:::i;:::-;;;225:5;;-1:-1:-1;;;;;225:5:5;211:10;:19;196:101;;;;-1:-1:-1;;;196:101:5;;609:2:9;196:101:5;;;591:21:9;648:2;628:18;;;621:30;687:34;667:18;;;660:62;-1:-1:-1;;;738:18:9;;;731:49;797:19;;196:101:5;;;;;;;;375:24:::1;:36:::0;313:103::o;14:180:9:-;73:6;126:2;114:9;105:7;101:23;97:32;94:2;;;142:1;139;132:12;94:2;-1:-1:-1;165:23:9;;84:110;-1:-1:-1;84:110:9:o",
   "source": "// SPDX-License-Identifier: MIT\npragma solidity >=0.4.22 <0.9.0;\n\ncontract Migrations {\n  address public owner = msg.sender;\n  uint public last_completed_migration;\n\n  modifier restricted() {\n    require(\n      msg.sender == owner,\n      \"This function is restricted to the contract's owner\"\n    );\n    _;\n  }\n\n  function setCompleted(uint completed) public restricted {\n    last_completed_migration = completed;\n  }\n}\n",
-  "sourcePath": "/media/drgorilla/T7 Touch/solidity/voyr_repoS/subscription/contracts/Migrations.sol",
+  "sourcePath": "/Volumes/ssd/solidity/voyr_repoS/subscription/contracts/Migrations.sol",
   "ast": {
     "absolutePath": "project:/contracts/Migrations.sol",
     "exportedSymbols": {
@@ -1466,9 +1468,35 @@
     "name": "solc",
     "version": "0.8.6+commit.11564f7e.Emscripten.clang"
   },
-  "networks": {},
+  "networks": {
+    "56": {
+      "events": {},
+      "links": {},
+      "address": "0x58BA13899dfdB0C21E17e6e5dC52670E3C01Ad3f",
+      "transactionHash": "0x62a6d46087cfbe0881cb51a10131509c9f708f868ca77df2c5b1ee18db0e7b4c"
+    },
+    "97": {
+      "events": {},
+      "links": {},
+      "address": "0x7571EabEBa9078bbC2a994096930144b71d1030e",
+      "transactionHash": "0x079a2a5624de1966fdb1a46a2305ff3e20749d07dfd6641fb23b8f28cc142213"
+    },
+    "5777": {
+      "events": {},
+      "links": {},
+      "address": "0xc12600Ba88fc388C00a7Ad6CB699F9612BB06004",
+      "transactionHash": "0x7c6adf1ebb4ff494f02496ed582fcfcff86476cdd90d825b968e79350012b371"
+    },
+    "1633696332326": {
+      "events": {},
+      "links": {},
+      "address": "0xF482f80bf6d034AA7bEc34602b16382C8DeDf912",
+      "transactionHash": "0x5aeb30fe9fc1f06cc7846746bb7eca2f51a39590d73112ca76ad9f66afc7332c"
+    }
+  },
   "schemaVersion": "3.4.1",
-  "updatedAt": "2021-09-21T13:07:42.463Z",
+  "updatedAt": "2021-10-08T12:37:51.137Z",
+  "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",
     "methods": {},

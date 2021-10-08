@@ -39,8 +39,16 @@ contract VoyrSubFactory is Ownable {
         child_contracts[creator_id].sendSubscription(receiver, length);
     }
 
-    function setPrice(uint256 creator_id, uint256 price) external onlyOwner {
-        child_contracts[creator_id].setCurrentPrice(price);
+    function addCreatorPlan(uint256 creator_id, uint256 price, uint256 duration) external onlyOwner {
+        child_contracts[creator_id].addNewPlan(price, duration);
+    }
+
+    function modifyCreatorPlan(uint256 creator_id, uint256 price, uint256 duration, uint256 index) external onlyOwner {
+        child_contracts[creator_id].modifyPlan(price, duration, index);
+    }
+
+    function deleteCreatorPlan(uint256 creator_id, uint256 index) external onlyOwner {
+        child_contracts[creator_id].deletePlan(index);
     }
 
     function suspendCreator(uint256 creator_id) external onlyOwner {
